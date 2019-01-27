@@ -2,56 +2,56 @@ pragma solidity 0.5.0;
 
 contract Splitter {
     
-    address owner; // Alice
-    address payable add1;  // Bob
-    address payable add2;  // Carol
+    address public owner; // Alice
+    address payable public add1;  // Bob
+    address payable public add2;  // Carol
+    
+    mapping(address => uint) funds;
     
     constructor() public {
         owner = msg.sender;
     }
     
+    modifier onlyOwner () {
+        require(msg.sender == owner);
+        _;
+    }
+    modifier address0 (address payable add) {
+        require(add != address(0));
+        _;
+    }
+    
     // set Bob's address
-    function setAddress1 (address payable _add1) public{
-        if (msg.sender != owner) return;
+    function setAddress1 (address payable _add1) public onlyOwner() address0(_add1) {
+        require(_add1 != add1);
         add1 = _add1;
     }
     
-    function setAddress2 (address payable _add2) public{
-        if (msg.sender != owner) return;
+    function setAddress2 (address payable _add2) public onlyOwner() address0(_add2) {
+        require(_add2 != add2);
         add2 = _add2;
     }
     
-    function getAddress1 () public view returns (address payable) {
-        return add1;
-    }
-    
-    function getAddress2 () public view returns (address payable) {
-        return add2;
-    }
-        
-    function getBalance () public view returns (uint) {
-         return address(this).balance;
-    }
-    
-    function getBalance1 () public view returns (uint) {
-        return add1.balance;
-    }
-    
-    function getBalance2 () public view returns (uint) {
-        return add2.balance;
-    }
-    
-    function getBalanceOwner() public view returns (uint) {
-        return owner.balance;
+    function addFunds (address receiver, uint amount) private {
+        funds[receiver] += amount;
     }
 
-    function split() public payable {
-        if (msg.sender != owner) {
+    function split() public payable onlyOwner() {
+        if (msg.value == 0) {
             revert();
         }
-        uint amount=msg.value;
-        add1.transfer(amount/2);
-        add2.transfer(amount/2);
+        addFunds(add1, msg.value/2);
+        addFunds(add2, msg.value/2);
+    }
+    
+    function withdrawFunds() public {
+        uint amount = funds[msg.sender];
+
+        require(amount != 0);
+        require(address(this).balance >= amount);
+
+        funds[msg.sender] = 0;
+        msg.sender.transfer(amount);
     }
     
 }
