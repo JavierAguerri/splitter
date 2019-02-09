@@ -2,17 +2,16 @@ pragma solidity 0.5.0;
 
 contract Splitter {
     
-    address public owner; // Alice
-    
     mapping (address => uint) public funds;
     
     constructor() public {
-        owner = msg.sender;
     }
     
-    event addedFunds (
-        address payable indexed _receiver,
-        uint value
+    event LogFundsAdded (
+        address indexed _receiver1,
+        uint value1,
+        address indexed _receiver2,
+        uint value2
     );
     
     event withdrawnFunds (
@@ -20,22 +19,26 @@ contract Splitter {
         uint value
     );
     
-    modifier address0 (address payable add) {
+    modifier addressNotZero (address  add) {
         require(add != address(0));
         _;
     }
+    
+    modifier fundsNotZero (address add) {
+        require(funds[msg.sender] != 0);
+        _;
+    }
 
-    function split(address payable receiver1, address payable receiver2) public payable address0(receiver1) address0(receiver2) {
+    function split(address payable receiver1, address payable receiver2) public payable addressNotZero(receiver1) addressNotZero(receiver2) {
         require(msg.value != 0);
-        funds[receiver1] += msg.value/2 + msg.value%2;
-        emit addedFunds(receiver1, funds[receiver1]);
-        funds[receiver2] += msg.value/2;
-        emit addedFunds(receiver2, funds[receiver2]);
+        uint half = msg.value / 2;
+        funds[receiver1] += half;
+        funds[receiver2] += msg.value - half;
+        emit LogFundsAdded(receiver1, half, receiver2, msg.value - half);
     }
     
-    function withdrawFunds() public {
+    function withdrawFunds() public fundsNotZero(msg.sender) {
         uint amount = funds[msg.sender];
-        require(amount != 0);
         funds[msg.sender] = 0;
         msg.sender.transfer(amount);
         emit withdrawnFunds(msg.sender, amount);
