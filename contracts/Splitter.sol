@@ -14,8 +14,8 @@ contract Splitter {
         uint value2
     );
     
-    event withdrawnFunds (
-        address payable _requester,
+    event LogWithdrawnFunds (
+        address _requester,
         uint value
     );
     
@@ -29,7 +29,7 @@ contract Splitter {
         _;
     }
 
-    function split(address payable receiver1, address payable receiver2) public payable addressNotZero(receiver1) addressNotZero(receiver2) {
+    function split(address receiver1, address receiver2) public addressNotZero(receiver1) addressNotZero(receiver2) {
         require(msg.value != 0);
         uint half = msg.value / 2;
         funds[receiver1] += half;
@@ -41,6 +41,6 @@ contract Splitter {
         uint amount = funds[msg.sender];
         funds[msg.sender] = 0;
         msg.sender.transfer(amount);
-        emit withdrawnFunds(msg.sender, amount);
+        emit LogWithdrawnFunds(msg.sender, amount);
     }
 }
