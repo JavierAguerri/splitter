@@ -29,7 +29,7 @@ contract Splitter {
         _;
     }
 
-    function split(address receiver1, address receiver2) public addressNotZero(receiver1) addressNotZero(receiver2) {
+    function split(address receiver1, address receiver2) payable public addressNotZero(receiver1) addressNotZero(receiver2) {
         require(msg.value != 0);
         uint half = msg.value / 2;
         funds[receiver1] += half;
