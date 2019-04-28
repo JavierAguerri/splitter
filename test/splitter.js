@@ -1,6 +1,6 @@
 const Splitter = artifacts.require("Splitter");
 const chai = require('chai');
-const BN = require('bn.js');
+const BN = web3.utils.BN
 chai.use(require('chai-bn')(BN));
 
 contract('Splitter', (accounts) => {
@@ -16,17 +16,36 @@ contract('Splitter', (accounts) => {
   console.log("Half is: "+halfBN);
   console.log("Remaining is: "+remainingBN);
   let splitterInstance;
-  beforeEach('setup contract for each test', async function () {
-        splitterInstance = await Splitter.new();
-  })
-  it('should split the received Ether and correctly withdraw balances', async () => {
-    // split funds
-    await splitterInstance.split(accountOne, accountTwo, {from: accounts[0], value: amountBN});
+  let initialFundsSenderBN;
+  let initialFundsOneBN;
+  let initialFundsTwoBN;
 
-    // save funds associated to each account at this point
-    const initialFundsSenderBN = await splitterInstance.funds(accountSender);
-    const initialFundsOneBN = await splitterInstance.funds(accountOne);
-    const initialFundsTwoBN = await splitterInstance.funds(accountTwo);
+  let currentBalanceSender;
+  let currentBalanceSenderBN;
+  let currentBalanceOne;
+  let currentBalanceOneBN;
+  let currentBalanceTwo;
+  let currentBalanceTwoBN;
+
+  let receipt0;
+  let receipt1;
+  let receipt2;
+
+  let finalFundsSenderBN;
+  let finalFundsOneBN;
+  let finalFundsTwoBN;
+
+  before('setup contract at the beginning', async function () {
+      splitterInstance = await Splitter.new();
+  });
+
+  it('should split the received Ether', async () => {
+    // split funds
+    await splitterInstance.split(accountOne, accountTwo, {from: accountSender, value: amountBN});
+
+    initialFundsSenderBN = await splitterInstance.funds(accountSender);
+    initialFundsOneBN = await splitterInstance.funds(accountOne);
+    initialFundsTwoBN = await splitterInstance.funds(accountTwo);
     console.log("Funds sender: "+initialFundsSenderBN);
     console.log("Funds one: "+initialFundsOneBN);
     console.log("Funds two: "+initialFundsTwoBN);
@@ -35,32 +54,38 @@ contract('Splitter', (accounts) => {
     assert.strictEqual(initialFundsSenderBN.toString(), remainingBN.toString(), "remaining wasn't in the sender's account");
     assert.strictEqual(initialFundsOneBN.toString(), halfBN.toString(), "half wasn't in the first account");
     assert.strictEqual(initialFundsTwoBN.toString(), halfBN.toString(), "half wasn't in the second account");
+  }); 
 
+  it('should save current balances and withdraw funds', async () => {
     // save the current account balances to check later 
-    const currentBalanceSender = await web3.eth.getBalance(accountSender);
-    const currentBalanceSenderBN = new BN (currentBalanceSender,10);
-    const currentBalanceOne = await web3.eth.getBalance(accountOne);
-    const currentBalanceOneBN = new BN (currentBalanceOne,10);
-    const currentBalanceTwo = await web3.eth.getBalance(accountTwo);
-    const currentBalanceTwoBN = new BN (currentBalanceTwo,10);
+    currentBalanceSender = await web3.eth.getBalance(accountSender);
+    currentBalanceSenderBN = new BN (currentBalanceSender,10);
+    currentBalanceOne = await web3.eth.getBalance(accountOne);
+    currentBalanceOneBN = new BN (currentBalanceOne,10);
+    currentBalanceTwo = await web3.eth.getBalance(accountTwo);
+    currentBalanceTwoBN = new BN (currentBalanceTwo,10);
 
     console.log("Sender account contains: "+currentBalanceSender);
     console.log("Account 1 contains: "+currentBalanceOne);
     console.log("Account 2 contains: "+currentBalanceTwo);
 
-    // withdraw funds
-    const receipt0 = await splitterInstance.withdrawFunds({from: accounts[0]});
-    const receipt1 = await splitterInstance.withdrawFunds({from: accounts[1]});
-    const receipt2 = await splitterInstance.withdrawFunds({from: accounts[2]});
+      // withdraw funds
+    receipt0 = await splitterInstance.withdrawFunds({from: accountSender});
+    receipt1 = await splitterInstance.withdrawFunds({from: accounts[1]});
+    receipt2 = await splitterInstance.withdrawFunds({from: accounts[2]});
+  });   
 
-    // check the funds were withdrawn
-    const finalFundsSenderBN = await splitterInstance.funds(accountSender);
-    const finalFundsOneBN = await splitterInstance.funds(accountOne);
-    const finalFundsTwoBN = await splitterInstance.funds(accountTwo);
+  it('should be that remaining balances in the contract are 0', async () => {
+    // check the remaining balances are 0
+    finalFundsSenderBN = await splitterInstance.funds(accountSender);
+    finalFundsOneBN = await splitterInstance.funds(accountOne);
+    finalFundsTwoBN = await splitterInstance.funds(accountTwo);
     assert.strictEqual(finalFundsSenderBN.toString(), "0", 'funds one were not correctly withdrawn');
     assert.strictEqual(finalFundsOneBN.toString(), "0", 'funds one were not correctly withdrawn');
     assert.strictEqual(finalFundsTwoBN.toString(), "0", 'funds two were not correctly withdrawn');
+  });
 
+  it('should be that balances in the accounts are what are supposed to be', async () => {
     // calculate transaction costs
     const gasUsed0BN = new BN (receipt0.receipt.gasUsed,10);
     const tx0 = await web3.eth.getTransaction(receipt0.tx);
@@ -93,28 +118,32 @@ contract('Splitter', (accounts) => {
     assert.strictEqual(calcBalanceTwoBN.toString(), finalBalanceTwoBN.toString(), 'Account 2 balance does not match the expected');
   });
 
-  it('should fail when sending 0', async () => {
-    let wasError = false;
-    try {
-      await splitterInstance.split(accountOne, accountTwo, {from: accounts[0], value: 0});
-    }
-    catch (err) {
-      wasError = true;
-      console.log(err);
-    }
-    assert.ok(wasError, "splitter did accept a 0 value");
-  });
+  describe ("Other tests",function() {
+    beforeEach('setup contract for each test', async function () {
+        splitterInstance = await Splitter.new();
+    });
+    it('should fail when sending 0', async () => {
+      let wasError = false;
+      try {
+        await splitterInstance.split(accountOne, accountTwo, {from: accountSender, value: 0});
+      }
+      catch (err) {
+        wasError = true;
+        console.log(err);
+      }
+      assert.ok(wasError, "splitter did accept a 0 value");
+    });
 
-  it('should fail splitting to accounts 0', async () => {
-    let wasError = false;
-    try {
-      await splitterInstance.split(accountOne, accountZero, {from: accounts[0], value: amount});
-    }
-    catch (err) {
-      wasError = true;
-      console.log(err);
-    }
-    assert.ok(wasError, "splitter did accept a 0 address");
-  });
-
+    it('should fail splitting to accounts 0', async () => {
+      let wasError = false;
+      try {
+        await splitterInstance.split(accountOne, accountZero, {from: accountSender, value: amount});
+      }
+      catch (err) {
+        wasError = true;
+        console.log(err);
+      }
+      assert.ok(wasError, "splitter did accept a 0 address");
+    });
+  })
 });
