@@ -5,7 +5,11 @@ module.exports = {
   // You can also follow this format for other networks;
   // see <http://truffleframework.com/docs/advanced/configuration>
   // for more details on how to specify configuration options!
-
+  compilers: {
+    solc: {
+      version: "0.5.2",
+    },
+  },
   networks: {
     development: {
       host: "localhost",
@@ -19,5 +23,6 @@ module.exports = {
       gas: 500000
     }
   }
+
 
 };
