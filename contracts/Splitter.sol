@@ -33,14 +33,12 @@ contract Splitter is Pausable {
         require(msg.value>0, "Amount splitted cannot be zero");
         uint half = msg.value / 2;
         funds[receiver1] = funds[receiver1].add(half);
-    	emit LogFundsAdded(receiver1, half);
+    	//emit LogFundsAdded(receiver1, half);
         funds[receiver2] = funds[receiver2].add(half);
-    	emit LogFundsAdded(receiver2, half);
+    	//emit LogFundsAdded(receiver2, half);
         uint mod = msg.value %2;
-    	if (mod != 0) {
-    		funds[msg.sender] = funds[msg.sender].add(mod);
-    		emit LogFundsAdded(msg.sender, mod);
-    	}
+    	funds[msg.sender] = funds[msg.sender].add(msg.value %2);
+    	emit LogFundsAdded(msg.sender, msg.value, receiver1, receiver2);
     }
     
     function withdrawFunds() public whenNotPaused {
