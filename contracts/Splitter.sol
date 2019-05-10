@@ -13,8 +13,10 @@ contract Splitter is Pausable {
     }
     
     event LogFundsAdded (
-        address indexed receiver,
-        uint indexed value
+        uint indexed sender,
+        uint indexed value,
+        address indexed requester1,
+        address indexed requester2
     );
     
     event LogWithdrawnFunds (
