@@ -13,8 +13,8 @@ contract Splitter is Pausable {
     }
     
     event LogFundsAdded (
-        uint indexed sender,
-        uint indexed value,
+        address indexed sender,
+        uint value,
         address indexed requester1,
         address indexed requester2
     );
@@ -38,7 +38,7 @@ contract Splitter is Pausable {
     	//emit LogFundsAdded(receiver1, half);
         funds[receiver2] = funds[receiver2].add(half);
     	//emit LogFundsAdded(receiver2, half);
-        uint mod = msg.value %2;
+        //uint mod = msg.value %2;
     	funds[msg.sender] = funds[msg.sender].add(msg.value %2);
     	emit LogFundsAdded(msg.sender, msg.value, receiver1, receiver2);
     }
