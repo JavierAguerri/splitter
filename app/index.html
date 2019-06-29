@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<title>My Splittle contract</title>
+<meta charset="utf-8">
+</head>
+<body>
+<script src="js/app.js"></script>
+<div id="accounts"></div>
+<div>You have <span id="balance">Loading...</span> wei</div>
+<br>
+<div>
+    Split <input name="amount" type="number" placeholder="0" /> wei
+    between <input name="recipient1" type="text" placeholder="0x0011223344556677889900112233445566778899" />
+    and <input name="recipient2" type="text" placeholder="0x0011223344556677889900112233445566778899" />
+    <button id="split">Split</button>
+
+</div>
+<br>
+<div>
+    <button id="withdraw">Withdraw my balance</button>
+</div>
+<div id="status"></div>
+</body>
+</html>
